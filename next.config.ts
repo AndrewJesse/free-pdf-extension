@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: true,
   poweredByHeader: false,
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
   turbopack: {
     resolveAlias: {
       canvas: './src/lib/pdf/empty-module.ts',

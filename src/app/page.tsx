@@ -9,9 +9,9 @@ export default function HomePage() {
     <>
       <SiteHeader />
       <main>
-        <section className="mx-auto flex min-h-[78vh] max-w-3xl flex-col justify-center px-6 py-24">
+        <section className="mx-auto flex min-h-[78vh] max-w-3xl flex-col justify-center px-5 py-16 sm:px-6 sm:py-24">
           <p className="text-[11px] uppercase tracking-[0.28em] text-muted">Free PDF</p>
-          <h1 className="mt-8 text-[2.35rem] font-normal leading-[1.12] tracking-[-0.03em] text-ink sm:text-6xl">
+          <h1 className="mt-8 max-w-full text-balance text-[2rem] font-normal leading-[1.12] tracking-[-0.03em] text-ink sm:text-6xl">
             {HERO}
           </h1>
           <p className="mt-8 max-w-md text-base leading-relaxed text-muted">

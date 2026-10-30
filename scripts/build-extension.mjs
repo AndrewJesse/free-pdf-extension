@@ -9,6 +9,10 @@ import { copyAssets } from './copy-assets.mjs';
 
 const root = process.cwd();
 const outDir = path.join(root, 'dist/extension');
+if (process.argv.includes('--icons-only')) {
+  writeIcons(path.join(root, 'src/extension/icons'));
+  process.exit(0);
+}
 const forbiddenHosts = [
   'cdnjs.cloudflare.com',
   'unpkg.com',
@@ -39,7 +43,7 @@ await esbuild.build({
   entryPoints: [path.join(root, 'src/extension/popup.tsx')],
   bundle: true,
   outfile: path.join(outDir, 'popup.js'),
-  format: 'esm',
+  format: 'iife',
   platform: 'browser',
   target: 'chrome120',
   minify: true,
@@ -59,6 +63,12 @@ await esbuild.build({
           if (!resolved) return { errors: [{ text: `Cannot resolve ${args.path}` }] };
           return { path: resolved };
         });
+        build.onLoad({ filter: /mozjpeg_enc\.js$/ }, async (args) => {
+          const contents = readFileSync(args.path, 'utf8')
+            .replaceAll('if(import.meta.url===undefined){import.meta.url="https://localhost"}', '')
+            .replaceAll('import.meta.url', '""');
+          return { contents, loader: 'js' };
+        });
       },
     },
   ],
@@ -72,6 +82,8 @@ cpSync(path.join(root, 'src/extension/popup.html'), path.join(outDir, 'popup.htm
 cpSync(path.join(root, 'src/extension/background.js'), path.join(outDir, 'background.js'));
 cpSync(path.join(root, 'public/pdfjs'), path.join(outDir, 'pdfjs'), { recursive: true });
 cpSync(path.join(root, 'public/codecs'), path.join(outDir, 'codecs'), { recursive: true });
+const iconDir = path.join(root, 'src/extension/icons');
+writeIcons(iconDir);
 writeIcons(path.join(outDir, 'icons'));
 
 const pkg = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'));
@@ -85,12 +97,14 @@ const manifest = {
     default_popup: 'popup.html',
     default_icon: {
       16: 'icons/icon-16.png',
+      32: 'icons/icon-32.png',
       48: 'icons/icon-48.png',
       128: 'icons/icon-128.png',
     },
   },
   icons: {
     16: 'icons/icon-16.png',
+    32: 'icons/icon-32.png',
     48: 'icons/icon-48.png',
     128: 'icons/icon-128.png',
   },
@@ -116,9 +130,26 @@ function assertLocalExtension(directory, manifestJson) {
     'pdfjs/wasm/openjpeg.wasm',
     'codecs/mozjpeg_enc.wasm',
     'icons/icon-16.png',
+    'icons/icon-32.png',
+    'icons/icon-48.png',
+    'icons/icon-128.png',
   ];
   for (const relative of required) {
-    readFileSync(path.join(directory, relative));
+    const file = readFileSync(path.join(directory, relative));
+    if (relative.startsWith('icons/icon-')) {
+      const size = Number(relative.match(/icon-(\d+)/)?.[1]);
+      const width = file.readUInt32BE(16);
+      const height = file.readUInt32BE(20);
+      if (file[0] !== 0x89 || width !== size || height !== size) {
+        throw new Error(`${relative} is not a ${size}×${size} PNG.`);
+      }
+    }
+  }
+  for (const size of [16, 32, 48, 128]) {
+    const iconPath = `icons/icon-${size}.png`;
+    if (manifestJson.icons?.[String(size)] !== iconPath) {
+      throw new Error(`manifest is missing the ${size}px icon.`);
+    }
   }
   if (manifestJson.host_permissions || manifestJson.optional_host_permissions || manifestJson.permissions) {
     throw new Error('The extension manifest must not request host or API permissions.');
@@ -162,27 +193,70 @@ function assertLocalExtension(directory, manifestJson) {
 
 function writeIcons(directory) {
   mkdirSync(directory, { recursive: true });
-  for (const size of [16, 48, 128]) {
+  for (const size of [16, 32, 48, 128]) {
     writeFileSync(path.join(directory, `icon-${size}.png`), png(size));
   }
+}
+
+function markColor(u, v) {
+  const left = 0.22;
+  const right = 0.78;
+  const top = 0.16;
+  const bottom = 0.84;
+  const fold = 0.18;
+  const page = [
+    [left, top],
+    [right - fold, top],
+    [right, top + fold],
+    [right, bottom],
+    [left, bottom],
+  ];
+  const dogEar = [
+    [right - fold, top],
+    [right - fold, top + fold],
+    [right, top + fold],
+  ];
+  if (inside(u, v, dogEar)) return [12, 12, 11];
+  if (inside(u, v, page)) return [243, 241, 234];
+  return [12, 12, 11];
+}
+
+function inside(x, y, polygon) {
+  let crossed = false;
+  for (let index = 0, next = polygon.length - 1; index < polygon.length; next = index, index += 1) {
+    const [x1, y1] = polygon[index];
+    const [x2, y2] = polygon[next];
+    const intersects = y1 > y !== y2 > y && x < ((x2 - x1) * (y - y1)) / (y2 - y1) + x1;
+    if (intersects) crossed = !crossed;
+  }
+  return crossed;
 }
 
 function png(size) {
   const rowBytes = size * 4 + 1;
   const raw = Buffer.alloc(rowBytes * size);
+  const samples = 3;
   for (let y = 0; y < size; y += 1) {
     raw[y * rowBytes] = 0;
     for (let x = 0; x < size; x += 1) {
-      const gx = ((x + 0.5) * 32) / size;
-      const gy = ((y + 0.5) * 32) / size;
-      const inPage = gx >= 8 && gx <= 24 && gy >= 6 && gy <= 26;
-      const border = inPage && (gx <= 9.3 || gx >= 22.7 || gy <= 7.3 || gy >= 24.7);
-      const fold = gx >= 18 && gx <= 24 && gy >= 6 && gy <= 12 && Math.abs(gx - 18 - (12 - gy)) < 0.85;
-      const ink = border || fold;
+      let red = 0;
+      let green = 0;
+      let blue = 0;
+      for (let sy = 0; sy < samples; sy += 1) {
+        for (let sx = 0; sx < samples; sx += 1) {
+          const u = (x + (sx + 0.5) / samples) / size;
+          const v = (y + (sy + 0.5) / samples) / size;
+          const [r, g, b] = markColor(u, v);
+          red += r;
+          green += g;
+          blue += b;
+        }
+      }
+      const count = samples * samples;
       const offset = y * rowBytes + 1 + x * 4;
-      raw[offset] = ink ? 243 : 12;
-      raw[offset + 1] = ink ? 241 : 12;
-      raw[offset + 2] = ink ? 234 : 11;
+      raw[offset] = Math.round(red / count);
+      raw[offset + 1] = Math.round(green / count);
+      raw[offset + 2] = Math.round(blue / count);
       raw[offset + 3] = 255;
     }
   }

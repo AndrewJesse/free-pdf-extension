@@ -1,4 +1,4 @@
-import { copyFileSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { cpSync, copyFileSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
@@ -23,6 +23,7 @@ export function copyAssets(root = process.cwd()) {
   mkdirSync(codecOut, { recursive: true });
 
   copyFileSync(path.join(pdfjsRoot, 'build/pdf.worker.min.mjs'), path.join(pdfjsOut, 'pdf.worker.min.mjs'));
+  cpSync(path.join(pdfjsRoot, 'standard_fonts'), path.join(pdfjsOut, 'standard_fonts'), { recursive: true });
 
   const wasmDir = path.join(pdfjsRoot, 'wasm');
   for (const name of readdirSync(wasmDir)) {

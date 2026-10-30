@@ -5,7 +5,7 @@ const links = [
 
 export function SiteHeader() {
   return (
-    <header className="flex items-center justify-between px-6 py-6 text-sm sm:px-10">
+    <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-5 text-sm sm:px-10">
       <a href="/" className="tracking-wide text-ink">
         Free PDF
       </a>

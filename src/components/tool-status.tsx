@@ -23,7 +23,7 @@ export function ToolStatus({
         {message}
       </p>
       {error ? (
-        <p role="alert" className="mt-2 text-sm text-ink">
+        <p role="alert" className="tool-alert">
           {error}
         </p>
       ) : null}

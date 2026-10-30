@@ -36,10 +36,10 @@ function PopupApp() {
       </div>
       <div className="mt-6" role="tabpanel">
         <div hidden={tool !== 'merge'}>
-          <MergeTool />
+          <MergeTool compact />
         </div>
         <div hidden={tool !== 'compress'}>
-          <CompressTool />
+          <CompressTool compact />
         </div>
       </div>
       <p className="mt-8 text-xs leading-relaxed text-muted">Documents stay in this popup. Nothing is uploaded.</p>

@@ -28,6 +28,7 @@ export async function extractEmbeddedImages(
   const task = pdfjs.getDocument({
     data: bytes,
     wasmUrl: paths.wasmUrl,
+    standardFontDataUrl: paths.standardFontDataUrl,
     useWasm: true,
     useWorkerFetch: true,
     isOffscreenCanvasSupported: false,

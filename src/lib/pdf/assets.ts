@@ -17,8 +17,9 @@ export function localAsset(path: string): string {
   return `/${normalized}`;
 }
 
-export function pdfjsPaths(): { workerSrc: string; wasmUrl: string } {
+export function pdfjsPaths(): { workerSrc: string; wasmUrl: string; standardFontDataUrl: string } {
   const workerSrc = new URL(localAsset('pdfjs/pdf.worker.min.mjs'), window.location.href).href;
   const wasmUrl = new URL('wasm/', workerSrc).href;
-  return { workerSrc, wasmUrl };
+  const standardFontDataUrl = new URL('standard_fonts/', workerSrc).href;
+  return { workerSrc, wasmUrl, standardFontDataUrl };
 }
