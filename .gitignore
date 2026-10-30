@@ -1,0 +1,8 @@
+node_modules
+.next
+out
+dist
+public/pdfjs
+public/codecs
+*.tsbuildinfo
+.DS_Store
