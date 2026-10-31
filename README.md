@@ -10,6 +10,8 @@ PDFs are read with `FileReader` and processed on the device. Merge uses `pdf-lib
 
 The extension requests no host permissions. Manifest V3 only allows certain CSP directives on extension pages, so the manifest sets `script-src 'self' 'wasm-unsafe-eval'`, `worker-src 'self'`, `object-src 'self'`, and `default-src 'self'` (which blocks remote fetch and XHR). The popup also sets an explicit `connect-src 'self'` meta policy. There is no analytics, telemetry, or remote font.
 
+Free PDF is part of [Free Utils](https://free-utils.com).
+
 ## Site
 
 ```bash
@@ -40,6 +42,10 @@ Load it in Chrome:
 3. Choose Load unpacked.
 4. Select the `dist/extension` folder.
 
+## Chrome Web Store
+
+The upload package, listing text, icon, and screenshots are in [`chrome-web-store/`](chrome-web-store/UPLOAD.md). Upload `chrome-web-store/free-pdf-extension.zip`. The steps are in [`chrome-web-store/UPLOAD.md`](chrome-web-store/UPLOAD.md), and the listing copy is in [`chrome-web-store/STORE_LISTING.md`](chrome-web-store/STORE_LISTING.md).
+
 ## Layout
 
 - `src/app` — landing page, merge, and compress routes
@@ -47,4 +53,5 @@ Load it in Chrome:
 - `src/lib/pdf` — local merge and compress modules
 - `src/extension` — popup and service worker sources
 - `scripts/build-extension.mjs` — static export plus extension package
+- `chrome-web-store` — store zip, screenshots, listing text, and upload guide
 - `public/pdfjs` and `public/codecs` — local worker and WASM, copied from installed packages by `npm install`

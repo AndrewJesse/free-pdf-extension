@@ -169,6 +169,10 @@ html.extension-popup body {
   overflow-x: hidden;
 }
 
+html.extension-popup .action-button {
+  margin-top: 1.25rem;
+}
+
 @media (max-width: 420px) {
   .action-button {
     width: 100%;

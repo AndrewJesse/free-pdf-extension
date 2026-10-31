@@ -27,7 +27,7 @@ export function ToolPanel({
         {title}
       </Heading>
       <p className="mt-4 text-sm leading-relaxed text-muted">{description}</p>
-      <div className="mt-8">{children}</div>
+      <div className={compact ? 'mt-5' : 'mt-8'}>{children}</div>
     </section>
   );
 }

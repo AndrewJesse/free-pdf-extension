@@ -37,8 +37,13 @@ export default function HomePage() {
           </div>
         </section>
       </main>
-      <footer className="border-t border-line px-6 py-16 text-xs text-muted sm:px-10">
-        No account. No server. No network calls for your documents.
+      <footer className="border-t border-line px-6 py-16 text-xs leading-relaxed text-muted sm:px-10">
+        <p>No account. No server. No network calls for your documents.</p>
+        <p className="mt-3">
+          <a href="https://free-utils.com" className="text-ink underline underline-offset-2">
+            https://free-utils.com
+          </a>
+        </p>
       </footer>
     </>
   );

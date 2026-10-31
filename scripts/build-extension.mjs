@@ -1,7 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { deflateSync } from 'node:zlib';
 import * as esbuild from 'esbuild';
 import postcss from 'postcss';
 import tailwindcss from '@tailwindcss/postcss';
@@ -91,7 +90,8 @@ const manifest = {
   manifest_version: 3,
   name: 'Free PDF',
   version: typeof pkg.version === 'string' ? pkg.version : '1.0.0',
-  description: 'Merge and compress PDFs on your device. Documents never leave this browser.',
+  description:
+    'Merge and compress PDFs on your device. Documents never leave this browser. https://free-utils.com',
   action: {
     default_title: 'Free PDF',
     default_popup: 'popup.html',
@@ -191,105 +191,15 @@ function assertLocalExtension(directory, manifestJson) {
   }
 }
 
+// The committed PNGs are the Free Utils capybara mark from brand-logo.webp.
 function writeIcons(directory) {
+  const sourceDir = path.join(root, 'src/extension/icons');
   mkdirSync(directory, { recursive: true });
   for (const size of [16, 32, 48, 128]) {
-    writeFileSync(path.join(directory, `icon-${size}.png`), png(size));
+    const name = `icon-${size}.png`;
+    const source = path.join(sourceDir, name);
+    const target = path.join(directory, name);
+    if (path.resolve(source) === path.resolve(target)) continue;
+    cpSync(source, target);
   }
-}
-
-function markColor(u, v) {
-  const left = 0.22;
-  const right = 0.78;
-  const top = 0.16;
-  const bottom = 0.84;
-  const fold = 0.18;
-  const page = [
-    [left, top],
-    [right - fold, top],
-    [right, top + fold],
-    [right, bottom],
-    [left, bottom],
-  ];
-  const dogEar = [
-    [right - fold, top],
-    [right - fold, top + fold],
-    [right, top + fold],
-  ];
-  if (inside(u, v, dogEar)) return [12, 12, 11];
-  if (inside(u, v, page)) return [243, 241, 234];
-  return [12, 12, 11];
-}
-
-function inside(x, y, polygon) {
-  let crossed = false;
-  for (let index = 0, next = polygon.length - 1; index < polygon.length; next = index, index += 1) {
-    const [x1, y1] = polygon[index];
-    const [x2, y2] = polygon[next];
-    const intersects = y1 > y !== y2 > y && x < ((x2 - x1) * (y - y1)) / (y2 - y1) + x1;
-    if (intersects) crossed = !crossed;
-  }
-  return crossed;
-}
-
-function png(size) {
-  const rowBytes = size * 4 + 1;
-  const raw = Buffer.alloc(rowBytes * size);
-  const samples = 3;
-  for (let y = 0; y < size; y += 1) {
-    raw[y * rowBytes] = 0;
-    for (let x = 0; x < size; x += 1) {
-      let red = 0;
-      let green = 0;
-      let blue = 0;
-      for (let sy = 0; sy < samples; sy += 1) {
-        for (let sx = 0; sx < samples; sx += 1) {
-          const u = (x + (sx + 0.5) / samples) / size;
-          const v = (y + (sy + 0.5) / samples) / size;
-          const [r, g, b] = markColor(u, v);
-          red += r;
-          green += g;
-          blue += b;
-        }
-      }
-      const count = samples * samples;
-      const offset = y * rowBytes + 1 + x * 4;
-      raw[offset] = Math.round(red / count);
-      raw[offset + 1] = Math.round(green / count);
-      raw[offset + 2] = Math.round(blue / count);
-      raw[offset + 3] = 255;
-    }
-  }
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(size, 0);
-  ihdr.writeUInt32BE(size, 4);
-  ihdr[8] = 8;
-  ihdr[9] = 6;
-  return Buffer.concat([
-    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
-    chunk('IHDR', ihdr),
-    chunk('IDAT', deflateSync(raw)),
-    chunk('IEND', Buffer.alloc(0)),
-  ]);
-}
-
-function chunk(type, data) {
-  const length = Buffer.alloc(4);
-  length.writeUInt32BE(data.length);
-  const typeBuf = Buffer.from(type);
-  const checksum = Buffer.alloc(4);
-  checksum.writeUInt32BE(crc32(Buffer.concat([typeBuf, data])));
-  return Buffer.concat([length, typeBuf, data, checksum]);
-}
-
-function crc32(buffer) {
-  let crc = ~0;
-  for (let index = 0; index < buffer.length; index += 1) {
-    crc ^= buffer[index];
-    for (let bit = 0; bit < 8; bit += 1) {
-      const mask = -(crc & 1);
-      crc = (crc >>> 1) ^ (0xedb88320 & mask);
-    }
-  }
-  return ~crc >>> 0;
 }
